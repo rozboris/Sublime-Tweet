@@ -9,13 +9,55 @@ import urllib2
 import threading, thread
 import time
 
-class TweetCommand(sublime_plugin.WindowCommand):
-    def __init__(self, window):
-        self.window = window
-        self.consumer_key    = '8m6wYJ3w8J7PxaZxTMkzw'
-        self.consumer_secret = 'XnbfrGRC0n93b37PaN7tZa53RuNbExeHRV1gToh4'
-        self.timeout = 1
+consumer_key    = '8m6wYJ3w8J7PxaZxTMkzw'
+consumer_secret = 'XnbfrGRC0n93b37PaN7tZa53RuNbExeHRV1gToh4'
+timeout = 1
+tweetsCount = 50
 
+class ReadTweetsCommand(sublime_plugin.WindowCommand):
+    def setInternetStatus(self, status):
+        self.internetStatus = status
+        sublime.set_timeout(self.loadTweetsFromTimeline, 0)
+
+    def run(self):
+        self.settingsController = SublimeTweetSettingsController()
+        if (not self.settingsController.s['twitter_have_token']):
+            self.window.run_command('tweet')
+            self.window.run_command('read_tweets')
+            return
+        self.internetStatus = None
+        sublime.status_message('Checking your internet connection...')
+        thread.start_new_thread(checkInternetConnection, (self.setInternetStatus, timeout))
+
+    def loadTweetsFromTimeline(self):
+        if (self.internetStatus == False):
+            print 'No internet connection, sorry!'
+            sublime.status_message('Please check your internet connection!')
+            return
+                
+        sublime.status_message('')       
+        self.tweets = []
+        api = libs.twitter.Api(consumer_key=consumer_key, 
+                consumer_secret=consumer_secret, 
+                access_token_key=self.settingsController.s['twitter_access_token_key'], 
+                access_token_secret=self.settingsController.s['twitter_access_token_secret'], 
+                input_encoding='utf8')
+        statuses = api.GetFriendsTimeline(count=tweetsCount, retweets=True)
+        for s in statuses:
+            #self.tweets.append('%s:\t%s' % (s.user.screen_name, s.text))
+            self.tweets.append([s.text, s.user.screen_name])
+        sublime.set_timeout(self.showTweetsOnPanel, 0)
+    
+    def showTweetsOnPanel(self):
+        if self.tweets and len(self.tweets) > 0:
+            self.window.show_quick_panel(self.tweets, self.onTweetSelected)
+        
+    def onTweetSelected(self, number):
+        #self.currentTweetActions = []
+        #self.currentTweetActions.append
+        pass
+
+class TweetCommand(sublime_plugin.WindowCommand):
     def setInternetStatus(self, status):
         self.internetStatus = status
         sublime.set_timeout(self.runIfInternetIsUp, 0)
@@ -23,7 +65,7 @@ class TweetCommand(sublime_plugin.WindowCommand):
     def run(self):
         self.internetStatus = None
         sublime.status_message('Checking your internet connection...')
-        thread.start_new_thread(checkInternetConnection, (self.setInternetStatus, self.timeout))
+        thread.start_new_thread(checkInternetConnection, (self.setInternetStatus, timeout))
 
     def runIfInternetIsUp(self):
         assert(self.internetStatus != None)
@@ -38,7 +80,7 @@ class TweetCommand(sublime_plugin.WindowCommand):
 
         if (not self.settingsController.s['twitter_have_token']):
             print 'Not registered\n'
-            self.TwitterAccessTokenRequester = TwitterAccessTokenRequester(self.consumer_key, self.consumer_secret)
+            self.TwitterAccessTokenRequester = TwitterAccessTokenRequester(consumer_key, consumer_secret)
             try:
                 url = self.TwitterAccessTokenRequester.getTokenFirstStep()
             except:
@@ -80,8 +122,8 @@ class TweetCommand(sublime_plugin.WindowCommand):
     
     def on_entered_tweet(self, text):
         if (text != ''):
-            api = libs.twitter.Api(consumer_key=self.consumer_key, 
-                consumer_secret=self.consumer_secret, 
+            api = libs.twitter.Api(consumer_key=consumer_key, 
+                consumer_secret=consumer_secret, 
                 access_token_key=self.settingsController.s['twitter_access_token_key'], 
                 access_token_secret=self.settingsController.s['twitter_access_token_secret'], 
                 input_encoding='utf8'
