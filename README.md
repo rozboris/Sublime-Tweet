@@ -33,7 +33,9 @@ Just type Tweet
 ### Via keyboard shortcut ###
 
 * Open Sublime keyboard config (`Preferences → Key Bindings — User`) and add your preferred shortcut like this
+
 	{ "keys": ["ctrl+shift+t"], "command": "tweet" }
+
 * Save the config.
 * Hit your selected shortcut.
 * ...

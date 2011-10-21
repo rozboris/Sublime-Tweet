@@ -1,0 +1,14 @@
+[
+    {
+        "caption": "Tools",
+        "mnemonic": "n",
+        "id": "tools",
+        "children":
+        [
+            {
+                "command": "tweet",
+                "caption": "Tweet"
+            }
+        ]
+    }
+]
