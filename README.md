@@ -6,7 +6,7 @@ Sublime Tweet is an open source twitter plugin for [Sublime Text 2][sublime] edi
 
 ### With Package Control ###
 
-If you have the [Package Control][package_control] package installed, you can install Sublime Tweet from inside Sublime Text itself. Open the Command Palette and select "Package Control: Install Package", then search for Sublime Tweet and you're done!
+If you have the [Package Control][package_control] installed, you can install Sublime Tweet from inside Sublime Text itself. Open the Command Palette and select "Package Control: Install Package", then search for Sublime Tweet and you're done!
 
 ### Without Package Control ###
 
@@ -23,40 +23,23 @@ and clone the repository there
 
 ## How to tweet ##
 
-### Via Sublime Text 2 menu ###
+* `Tools → Tweet`
 
-Just select `Tools → Tweet`
+* `Tweet` in Command Palette
 
-### Via Command Palette ###
+* `{ "keys": ["ctrl+shift+t"], "command": "tweet" }`
 
-Just type `Tweet`
+## How to read your public timeline ##
 
-## How to read public timeline ##
+* `Tools → Read twitter timeline`
 
-### Via Sublime Text 2 menu ###
+* `Twitter` in Command Palette
 
-Just select `Tools → Read twitter timeline`
-
-### Via Command Palette ###
-
-Just type `Twitter`
-
-### Via keyboard shortcut ###
-
-* Open Sublime keyboard config (`Preferences → Key Bindings — User`) and add your preferred shortcut like this
-
-	`{ "keys": ["ctrl+shift+c"], "command": "read_tweets" }`
-
-* Save the config.
-* Hit your selected shortcut.
-* ...
-* PROFIT!
+* `{ "keys": ["ctrl+shift+c"], "command": "read_tweets" }`
 
 ##First run##
 
-Run Sublime Tweet as explained above and you will be prompted to authorize Sublime Tweet.
-
-After the authorization you can run Tweet command again and start tweeting.
+On the first run of Sublime Tweet you will be prompted to authorize it, don't be surprised. You should do it only once.
 
 ---------
 
