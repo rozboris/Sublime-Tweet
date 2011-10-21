@@ -10,15 +10,16 @@ If you have the [Package Control][package_control] package installed, you can in
 
 ### Without Package Control ###
 
-Clone the repository
-	
-	git clone https://github.com/rozboris/Sublime-Tweet.git "Sublime Tweet"
-
-to your Sublime Text 2 Packages directory:
+Go to your Sublime Text 2 Packages directory:
 
 	Windows: %USERPROFILE%\AppData\Roaming\Sublime Text 2\Packages\
 
 	Mac: ~/Library/Application Support/Sublime Text 2/Packages/	
+
+and clone the repository there
+	
+	git clone git://github.com/rozboris/Sublime-Tweet.git "Sublime Tweet"
+
 
 ## How to tweet ##
 
@@ -28,13 +29,13 @@ Just select `Tools → Tweet`
 
 ### Via Command Palette ###
 
-Just type Tweet
+Just type `Tweet`
 
 ### Via keyboard shortcut ###
 
 * Open Sublime keyboard config (`Preferences → Key Bindings — User`) and add your preferred shortcut like this
 
-	{ "keys": ["ctrl+shift+t"], "command": "tweet" }
+	`{ "keys": ["ctrl+shift+t"], "command": "tweet" }`
 
 * Save the config.
 * Hit your selected shortcut.
