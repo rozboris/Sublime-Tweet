@@ -2,5 +2,10 @@
     {
         "caption": "Tweet",
         "command": "tweet"
+    }, 
+    {
+        "caption": "Read twitter timeline",
+        "command": "read_tweets"
     }
+
 ]

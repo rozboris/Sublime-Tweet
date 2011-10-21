@@ -31,11 +31,21 @@ Just select `Tools → Tweet`
 
 Just type `Tweet`
 
+## How to read public timeline ##
+
+### Via Sublime Text 2 menu ###
+
+Just select `Tools → Read twitter timeline`
+
+### Via Command Palette ###
+
+Just type `Twitter`
+
 ### Via keyboard shortcut ###
 
 * Open Sublime keyboard config (`Preferences → Key Bindings — User`) and add your preferred shortcut like this
 
-	`{ "keys": ["ctrl+shift+t"], "command": "tweet" }`
+	`{ "keys": ["ctrl+shift+c"], "command": "read_tweets" }`
 
 * Save the config.
 * Hit your selected shortcut.
@@ -51,7 +61,7 @@ After the authorization you can run Tweet command again and start tweeting.
 ---------
 
 It's an early beta now, please submit all bugs found.
-Now you only can only send tweets, but not read them, sorry. 
+Now you only can only send and read tweets, but not reply or favourite or mention, sorry. 
 
 [sublime]: http://www.sublimetext.com/2
 [package_control]: http://wbond.net/sublime_packages/package_control
