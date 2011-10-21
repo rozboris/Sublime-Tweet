@@ -98,7 +98,7 @@ class TweetCommand(sublime_plugin.WindowCommand):
         else:
             print 'Already registered\n'
             message = 'Tweet:'
-            self.window.show_input_panel(message, '', self.on_entered_tweet, None, None)
+            self.window.show_input_panel(message, '', self.on_entered_tweet, self.update_character_counter_on_entering_tweet, None)
     
     def on_entered_pin(self, text):
         try:
@@ -120,6 +120,10 @@ class TweetCommand(sublime_plugin.WindowCommand):
         self.settingsController.saveSettings()
         #print 'Your Twitter Access Token key: %s secret: %s' % (self.access_token_key, self.access_token_secret)
     
+    def update_character_counter_on_entering_tweet(self, text):
+        m = 'Charaters remain: %s' % (140 - len(text))
+        sublime.status_message(m) 
+
     def on_entered_tweet(self, text):
         if (text != ''):
             api = libs.twitter.Api(consumer_key=consumer_key, 
