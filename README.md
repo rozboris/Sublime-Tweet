@@ -23,6 +23,7 @@ First run
 ---------
 
 Just hit the shortcut you configured and you will be prompted to authorize Sublime Tweet.
+
 After the authorization you can hit the shortcut again and start tweeting.
 
 ---------
