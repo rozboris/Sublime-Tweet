@@ -4,7 +4,7 @@
         "command": "tweet"
     }, 
     {
-        "caption": "Read twitter timeline",
+        "caption": "Twitter timeline",
         "command": "read_tweets"
     }
 

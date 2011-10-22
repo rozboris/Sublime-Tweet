@@ -1,6 +1,12 @@
 # Sublime Tweet #
 
-Sublime Tweet is an open source twitter plugin for [Sublime Text 2][sublime] editor. It allows you to tweet right from our favorite Sublime Text 2!
+Sublime Tweet is an open source twitter plugin for [Sublime Text 2][sublime] editor. 
+
+It allows you to read and post tweets right from our favorite Sublime Text 2!
+
+## Updates ##
+
+* (22 Oct 2011) Sublime Tweet now can `favorite`, `retweet`, `reply` and `open URLs` from tweets!
 
 ## Installation ##
 
@@ -29,13 +35,15 @@ and clone the repository there
 
 * `{ "keys": ["ctrl+shift+t"], "command": "tweet" }`
 
-## How to read your public timeline ##
+## How to read your public timeline, `favorite`, `retweet`, `reply` or `open URLs` ##
 
 * `Tools → Read twitter timeline`
 
 * `Twitter` in Command Palette
 
 * `{ "keys": ["ctrl+shift+c"], "command": "read_tweets" }`
+
+You'll see a list of letest tweets in your timeline. Just hit Enter on a tweet to favorite, retweet, reply or open an URL from the tweet.
 
 ##First run##
 
@@ -44,7 +52,6 @@ On the first run of Sublime Tweet you will be prompted to authorize it, don't be
 ---------
 
 It's an early beta now, please submit all bugs found.
-Now you only can only send and read tweets, but not reply or favourite or mention, sorry. 
 
 [sublime]: http://www.sublimetext.com/2
 [package_control]: http://wbond.net/sublime_packages/package_control
