@@ -4,7 +4,7 @@ Sublime Tweet is an open source twitter plugin for [Sublime Text 2][sublime] edi
 
 ## Installation ##
 
-### With Package Control ###
+### With Package Control (not yet available) ###
 
 If you have the [Package Control][package_control] installed, you can install Sublime Tweet from inside Sublime Text itself. Open the Command Palette and select "Package Control: Install Package", then search for Sublime Tweet and you're done!
 
