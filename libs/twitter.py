@@ -2754,7 +2754,6 @@ class Api(object):
       u_status = status
     else:
       u_status = unicode(status, self._input_encoding)
-    print len(u_status)
     if len(u_status) > CHARACTER_LIMIT:
       raise TwitterError("Text must be less than or equal to %d characters. "
                          "Consider using PostUpdates." % CHARACTER_LIMIT)

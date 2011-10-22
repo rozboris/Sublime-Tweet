@@ -95,7 +95,7 @@ class ReadTweetsCommand(sublime_plugin.WindowCommand):
             access_token_secret=self.settingsController.s['twitter_access_token_secret'], 
             input_encoding='utf8')
         try:
-            api.RetweetPost(id=tweet.id)
+            api.RetweetPost(id=int(tweet.id))
         except libs.twitter.TwitterError as error:
             if ('authenticate' in error.message):
                 self.settingsController.s['twitter_have_token'] = False
@@ -177,7 +177,7 @@ class TweetCommand(sublime_plugin.WindowCommand):
                 sublime.status_message('Your tweet is longer than 140 symbols, so it was truncated to 140 and posted anyway.')    
             text = text.encode('utf8')
             try:
-                status = api.PostUpdate(text, in_reply_to_status_id=self.replyToId)
+                status = api.PostUpdate(text, int(self.replyToId))
             except libs.twitter.TwitterError as error:
                 if ('authenticate' in error.message):
                     self.settingsController.s['twitter_have_token'] = False
