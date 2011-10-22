@@ -54,10 +54,9 @@ class ReadTweetsCommand(sublime_plugin.WindowCommand):
             print 'Problems with tweeting:%s' % error.message
             return
         for s in self.tweets:
-            #self.tweets.append('%s:\t%s' % (s.user.screen_name, s.text))
             firstLine  = s.text
             secondLine = '@%s (%s)' % (s.user.screen_name, s.relative_created_at)
-            #if (s.retweeted): secondLine = secondLine + ' — %s times retweeted' % (s.retweet_count)
+            #if (s.retweet_count > 0): secondLine = secondLine + ' - %s times retweeted' % (s.retweet_count)
             self.tweet_texts.append([firstLine, secondLine])
         sublime.set_timeout(self.showTweetsOnPanel, 0)
     
