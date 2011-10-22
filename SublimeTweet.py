@@ -153,7 +153,7 @@ class TweetCommand(sublime_plugin.WindowCommand):
             return
         
         if(self.replyToId):
-            message = 'Reply to @%s:' % self.selectedTweet.user.screen_name
+            message = 'Reply to @%s:' % self.replyToName
         else:
             message = 'Tweet:'
         self.window.show_input_panel(message, '', self.on_entered_tweet, self.update_character_counter_on_entering_tweet, None)
