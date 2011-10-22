@@ -2766,6 +2766,27 @@ class Api(object):
     data = self._ParseAndCheckTwitter(json)
     return Status.NewFromJsonDict(data)
 
+  def RetweetPost(self, id):
+    '''Retweet some twitter status.
+
+    The twitter.Api instance must be authenticated.
+
+    Args:
+     id:
+       The ID of an existing status that should be retweeted.
+    Returns:
+     A twitter.Status instance representing the message posted.
+    '''
+    if not self._oauth_consumer:
+     raise TwitterError("The twitter.Api instance must be authenticated.")
+
+    url = '%s/statuses/retweet/%d.json' % (self.base_url, id)
+
+    json = self._FetchUrl(url, post_data={'':None})
+    data = simplejson.loads(json)
+    self._CheckForTwitterError(data)
+    return Status.NewFromJsonDict(data)
+
   def PostUpdates(self, status, continuation=None, **kwargs):
     '''Post one or more twitter status messages from the authenticated user.
 
