@@ -12,7 +12,7 @@ It allows you to read and post tweets right from our favorite Sublime Text 2!
 
 ### With Package Control (not yet available) ###
 
-If you have the [Package Control][package_control] installed, you can install Sublime Tweet from inside Sublime Text itself. Open the Command Palette and select "Package Control: Install Package", then search for Sublime Tweet and you're done!
+If you have the [Package Control][package_control] installed, you can install Sublime Tweet from inside Sublime Text itself. Open the Command Palette and select "Package Control: Install Package", then search for Sublime Tweet and you’re done!
 
 ### Without Package Control ###
 
@@ -43,15 +43,15 @@ and clone the repository there
 
 * `{ "keys": ["ctrl+shift+c"], "command": "read_tweets" }`
 
-You'll see a list of letest tweets in your timeline. Just hit Enter on a tweet to favorite, retweet, reply or open an URL from the tweet.
+You’ll see a list of latest tweets in your timeline. Just hit Enter on a tweet to favorite, retweet, reply or open an URL from the tweet.
 
 ##First run##
 
-On the first run of Sublime Tweet you will be prompted to authorize it, don't be surprised. You should do it only once.
+On the first run of Sublime Tweet you will be prompted to authorize it, don’t be surprised. You should do it only once.
 
 ---------
 
-It's an early beta now, please submit all bugs found.
+It’s an early beta now, please submit all bugs found.
 
 [sublime]: http://www.sublimetext.com/2
 [package_control]: http://wbond.net/sublime_packages/package_control
