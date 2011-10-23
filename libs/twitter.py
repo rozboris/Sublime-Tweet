@@ -2299,6 +2299,25 @@ class Api(object):
     json = self._FetchUrl(url,  parameters=parameters)
     data = self._ParseAndCheckTwitter(json)
     return [Status.NewFromJsonDict(x) for x in data]
+  
+  def GetRelatedTweets(self,
+                        parent_id):
+    '''EXPERIMENTAAL:
+      Fetch the related tweets.
+
+    Args:
+      parent_id:
+        ID of source tweet
+
+    Returns:
+      An sequence of twitter.Status instances, one for each related message
+    '''
+    parameters = {}
+
+    url  = '%s/related_results/show/%d.json' % (self.base_url, parent_id)
+    json = self._FetchUrl(url,  parameters=parameters)
+    data = self._ParseAndCheckTwitter(json)
+    return [Status.NewFromJsonDict(x[u'value']) for x in (data.pop(0))[u'results']]
 
   def FilterPublicTimeline(self,
                            term,
