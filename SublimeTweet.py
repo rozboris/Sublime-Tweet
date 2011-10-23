@@ -50,6 +50,16 @@ class ReadTweetsCommand(sublime_plugin.WindowCommand):
             sublime.status_message('Sorry, we have some problems. Please, try again.')
             print 'Problems with tweeting:%s' % error.message
             return
+        newTweets = []
+        previouslyShownTweets = self.settingsController.s.get('previouslyShownTweets', None)
+        for t in self.tweets:
+            if not previouslyShownTweets or len(previouslyShownTweets) > 0 or (t.text not in previouslyShownTweets):
+                print 'Was not shown before: %s' % t.text
+                t.text = '* ' + t.text
+            newTweets.append(t)
+        self.settingsController.s['previouslyShownTweets'] = [t.text for t in self.tweets]
+        self.settingsController.saveSettings()
+        self.tweets = newTweets
         sublime.set_timeout(self.showTweetsOnPanel, 0)
     
     def showTweetsOnPanel(self):
@@ -196,7 +206,7 @@ class TweetCommand(sublime_plugin.WindowCommand):
 
 class SublimeTweetSettingsController:
     def __init__(self, filename = 'SublimeTweet.settings'):
-        self.defaultSettings = {'twitter_have_token': False, 'twitter_access_token_key': None, 'twitter_access_token_secret': None}
+        self.defaultSettings = {'twitter_have_token': False, 'twitter_access_token_key': None, 'twitter_access_token_secret': None, 'previously_shown_tweets':[]}
         self.filename = sublime.packages_path() + '\\User\\' + filename
         print self.filename
         self.s = self.loadSettings()
