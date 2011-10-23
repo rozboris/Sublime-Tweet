@@ -2317,7 +2317,11 @@ class Api(object):
     url  = '%s/related_results/show/%d.json' % (self.base_url, parent_id)
     json = self._FetchUrl(url,  parameters=parameters)
     data = self._ParseAndCheckTwitter(json)
-    return [Status.NewFromJsonDict(x[u'value']) for x in (data.pop(0))[u'results']]
+    if len(data) > 0:
+      data = data.pop(0)
+      return [Status.NewFromJsonDict(x[u'value']) for x in data[u'results']]
+    else:
+      return []
 
   def FilterPublicTimeline(self,
                            term,

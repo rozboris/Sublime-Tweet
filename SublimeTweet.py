@@ -4,9 +4,7 @@
 import sublime, sublime_plugin
 import libs.twitter
 import json
-from libs.get_access_token import TwitterAccessTokenRequester
-import urllib2
-import threading, thread
+import thread
 import time
 
 consumer_key    = '8m6wYJ3w8J7PxaZxTMkzw'
@@ -14,7 +12,7 @@ consumer_secret = 'XnbfrGRC0n93b37PaN7tZa53RuNbExeHRV1gToh4'
 url_that_always_online = 'http://twitter.com'
 timeout = 5
 tweetsCount = 50
-tweet_actions = [['Favorite', ''], ['Retweet', ''], ['Reply', ''], ['Open Related tweets', '']]
+tweet_actions = [['Favorite', ''], ['Retweet', ''], ['Reply', ''], ['Show related tweets', '']]
 
 class ReadTweetsCommand(sublime_plugin.WindowCommand):
     def run(self):
@@ -38,13 +36,13 @@ class ReadTweetsCommand(sublime_plugin.WindowCommand):
             TwitterUserRegistration(self.window).register()
             return
  
-        api = libs.twitter.Api(consumer_key=consumer_key, 
+        self.api = libs.twitter.Api(consumer_key=consumer_key, 
                 consumer_secret=consumer_secret, 
                 access_token_key=self.settingsController.s['twitter_access_token_key'], 
                 access_token_secret=self.settingsController.s['twitter_access_token_secret'], 
                 input_encoding='utf8')
         try:
-            self.tweets = api.GetFriendsTimeline(count=tweetsCount, retweets=True, include_entities=True)
+            self.tweets = self.api.GetFriendsTimeline(count=tweetsCount, retweets=True, include_entities=True)
         except libs.twitter.TwitterError as error:
             if ('authenticate' in error.message):
                 self.settingsController.s['twitter_have_token'] = False
@@ -55,17 +53,19 @@ class ReadTweetsCommand(sublime_plugin.WindowCommand):
         sublime.set_timeout(self.showTweetsOnPanel, 0)
     
     def showTweetsOnPanel(self):
+        self.tweet_texts = []
         if self.tweets and len(self.tweets) > 0:
-            self.tweet_texts = []
             for s in self.tweets:
                 firstLine  = s.text
                 secondLine = '@%s (%s)' % (s.user.screen_name, s.relative_created_at)
                 #if (s.retweet_count > 0): secondLine = secondLine + ' - %s times retweeted' % (s.retweet_count)
                 self.tweet_texts.append([firstLine, secondLine])
-            self.window.show_quick_panel(self.tweet_texts, self.onTweetSelected)
+        else:
+            self.tweet_texts.append(['No tweets to show', 'If you think it\'s an error - please contact an author'])
+        self.window.show_quick_panel(self.tweet_texts, self.onTweetSelected)
         
     def onTweetSelected(self, number):
-        if number != -1:
+        if number != -1 and len(self.tweets) > 0:
             self.selectedTweet = self.tweets.pop(number)
             self.currentTweetActions = []
             self.currentTweetActions = tweet_actions
@@ -92,13 +92,8 @@ class ReadTweetsCommand(sublime_plugin.WindowCommand):
             webbrowser.open(url)
     
     def doRetweet(self, tweet):
-        api = libs.twitter.Api(consumer_key=consumer_key, 
-            consumer_secret=consumer_secret, 
-            access_token_key=self.settingsController.s['twitter_access_token_key'], 
-            access_token_secret=self.settingsController.s['twitter_access_token_secret'], 
-            input_encoding='utf8')
         try:
-            api.RetweetPost(id=int(tweet.id))
+            self.api.RetweetPost(id=int(tweet.id))
         except libs.twitter.TwitterError as error:
             if ('authenticate' in error.message):
                 self.settingsController.s['twitter_have_token'] = False
@@ -109,13 +104,8 @@ class ReadTweetsCommand(sublime_plugin.WindowCommand):
         sublime.status_message('Tweet was retweeted')
 
     def showRelatedTweets(self, tweet):
-        api = libs.twitter.Api(consumer_key=consumer_key, 
-            consumer_secret=consumer_secret, 
-            access_token_key=self.settingsController.s['twitter_access_token_key'], 
-            access_token_secret=self.settingsController.s['twitter_access_token_secret'], 
-            input_encoding='utf8')
         try:
-            self.tweets = api.GetRelatedTweets(parent_id=int(tweet.id))
+            self.tweets = self.api.GetRelatedTweets(parent_id=int(tweet.id))
         except libs.twitter.TwitterError as error:
             if ('authenticate' in error.message):
                 self.settingsController.s['twitter_have_token'] = False
@@ -126,13 +116,8 @@ class ReadTweetsCommand(sublime_plugin.WindowCommand):
         sublime.set_timeout(self.showTweetsOnPanel, 0)
 
     def doFavorite(self, tweet):
-        api = libs.twitter.Api(consumer_key=consumer_key, 
-            consumer_secret=consumer_secret, 
-            access_token_key=self.settingsController.s['twitter_access_token_key'], 
-            access_token_secret=self.settingsController.s['twitter_access_token_secret'], 
-            input_encoding='utf8')
         try:
-            api.CreateFavorite(status=tweet)
+            self.api.CreateFavorite(status=tweet)
         except libs.twitter.TwitterError as error:
             if ('authenticate' in error.message):
                 self.settingsController.s['twitter_have_token'] = False
@@ -234,6 +219,7 @@ class SublimeTweetSettingsController:
 
 def checkInternetConnection(func, timeout):
     try:
+        import urllib2
         response=urllib2.urlopen(url_that_always_online,timeout=timeout)
         func(True)
         return
@@ -247,7 +233,7 @@ class TwitterUserRegistration(sublime_plugin.WindowCommand):
     def register(self):
         self.settingsController = SublimeTweetSettingsController()
         if (not self.settingsController.s['twitter_have_token']):
-            print 'Not registered\n'
+            from libs.get_access_token import TwitterAccessTokenRequester
             self.TwitterAccessTokenRequester = TwitterAccessTokenRequester(consumer_key, consumer_secret)
             try:
                 url = self.TwitterAccessTokenRequester.getTokenFirstStep()
