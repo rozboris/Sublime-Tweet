@@ -8,6 +8,8 @@ It allows you to read and post tweets right from our favorite Sublime Text 2!
 
 * (22 Oct 2011) Sublime Tweet now can `favorite`, `retweet`, `reply` and `open URLs` from tweets!
 
+* (23 Oct 2011) Added `Related tweets` and `Mark new tweets` features!
+
 ## Installation ##
 
 ### With Package Control (not yet available) ###
@@ -43,7 +45,7 @@ and clone the repository there
 
 * `{ "keys": ["ctrl+shift+c"], "command": "read_tweets" }`
 
-You’ll see a list of latest tweets in your timeline. Just hit Enter on a tweet to favorite, retweet, reply or open an URL from the tweet.
+You’ll see a list of latest tweets in your timeline. Just hit Enter on a tweet to favorite, retweet, reply, get related tweets or open an URL from the tweet.
 
 ##First run##
 

@@ -50,16 +50,15 @@ class ReadTweetsCommand(sublime_plugin.WindowCommand):
             sublime.status_message('Sorry, we have some problems. Please, try again.')
             print 'Problems with tweeting:%s' % error.message
             return
-        newTweets = []
-        previouslyShownTweets = self.settingsController.s.get('previouslyShownTweets', None)
-        for t in self.tweets:
-            if not previouslyShownTweets or len(previouslyShownTweets) > 0 or (t.text not in previouslyShownTweets):
-                print 'Was not shown before: %s' % t.text
-                t.text = '* ' + t.text
-            newTweets.append(t)
-        self.settingsController.s['previouslyShownTweets'] = [t.text for t in self.tweets]
+
+        previouslyShownTweets = self.settingsController.s.get('previously_shown_tweets', None)
+        self.settingsController.s['previously_shown_tweets'] = [s.id for s in self.tweets]
         self.settingsController.saveSettings()
-        self.tweets = newTweets
+        for t in self.tweets:
+            t.new = False
+            if not previouslyShownTweets or len(previouslyShownTweets) <= 0 or not (t.id in previouslyShownTweets):
+                t.new = True
+                
         sublime.set_timeout(self.showTweetsOnPanel, 0)
     
     def showTweetsOnPanel(self):
@@ -68,6 +67,7 @@ class ReadTweetsCommand(sublime_plugin.WindowCommand):
             for s in self.tweets:
                 firstLine  = s.text
                 secondLine = '@%s (%s)' % (s.user.screen_name, s.relative_created_at)
+                if hasattr(s, 'new') and s.new: secondLine = '*NEW* ' + secondLine
                 #if (s.retweet_count > 0): secondLine = secondLine + ' - %s times retweeted' % (s.retweet_count)
                 self.tweet_texts.append([firstLine, secondLine])
         else:
@@ -179,6 +179,7 @@ class TweetCommand(sublime_plugin.WindowCommand):
 
     def on_entered_tweet(self, text):
         if (text != ''):
+            sublime.status_message('Sending tweet...')
             if (self.replyToId):
                 text = '@%s %s' % (self.replyToName, text)
             api = libs.twitter.Api(consumer_key=consumer_key, 
@@ -192,7 +193,10 @@ class TweetCommand(sublime_plugin.WindowCommand):
                 sublime.status_message('Your tweet is longer than 140 symbols, so it was truncated to 140 and posted anyway.')    
             text = text.encode('utf8')
             try:
-                status = api.PostUpdate(text, int(self.replyToId))
+                if self.replyToId:
+                    status = api.PostUpdate(text, int(self.replyToId))
+                else:
+                    status = api.PostUpdate(text)
             except libs.twitter.TwitterError as error:
                 if ('authenticate' in error.message):
                     self.settingsController.s['twitter_have_token'] = False
@@ -207,8 +211,7 @@ class TweetCommand(sublime_plugin.WindowCommand):
 class SublimeTweetSettingsController:
     def __init__(self, filename = 'SublimeTweet.settings'):
         self.defaultSettings = {'twitter_have_token': False, 'twitter_access_token_key': None, 'twitter_access_token_secret': None, 'previously_shown_tweets':[]}
-        self.filename = sublime.packages_path() + '\\User\\' + filename
-        print self.filename
+        self.filename = sublime.packages_path() + '/User/' + filename
         self.s = self.loadSettings()
 
     def loadSettings(self, forceRewriteFile = False):
@@ -216,7 +219,11 @@ class SublimeTweetSettingsController:
         if(not forceRewriteFile and os.path.exists(self.filename)):
             #Reading settings from existing file
             with open(self.filename) as f:
-                return json.load(f)
+                try:
+                    r = json.load(f)
+                except:
+                    return self.loadSettings(forceRewriteFile=True)
+                return r
         else:
             #Creating new settings file
             with open(self.filename, 'w') as f:
