@@ -8,7 +8,9 @@ It allows you to read and post tweets right from our favorite Sublime Text 2!
 
 * (22 Oct 2011) Sublime Tweet now can `favorite`, `retweet`, `reply` and `open URLs` from tweets!
 
-* (23 Oct 2011) Added `Related tweets` and `Mark new tweets` features!
+* (23 Oct 2011) Added `Related tweets` and `Mark new tweets` features
+
+* (25 Oct 2011) Added proxy support
 
 ## Installation ##
 
@@ -46,6 +48,22 @@ and clone the repository there
 * `{ "keys": ["ctrl+shift+c"], "command": "read_tweets" }`
 
 You’ll see a list of latest tweets in your timeline. Just hit Enter on a tweet to favorite, retweet, reply, get related tweets or open an URL from the tweet.
+
+## How to set proxy to use ##
+
+Note: *You currently can't sign in to Twitter through proxy, you can only use it, if you were authorised without proxy, sorry*
+
+Go to your Sublime Text 2 Packages directory, locate `/User/SublimeTweet.settings` file and replace
+
+    "twitter_proxy_config": none
+
+with
+
+	"twitter_proxy_config": {
+	    "http": "hostname:port", 
+	    "https": "hostname:port"
+	}
+
 
 ##First run##
 
