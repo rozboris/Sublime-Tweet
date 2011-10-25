@@ -70,7 +70,6 @@ class ReadTweetsCommand(sublime_plugin.WindowCommand):
                 firstLine  = s.text
                 secondLine = '@%s (%s)' % (s.user.screen_name, s.relative_created_at)
                 if hasattr(s, 'new') and s.new: secondLine = '*NEW* ' + secondLine
-                #if (s.retweet_count > 0): secondLine = secondLine + ' - %s times retweeted' % (s.retweet_count)
                 self.tweet_texts.append([firstLine, secondLine])
         else:
             self.tweet_texts.append(['No tweets to show', 'If you think it\'s an error - please contact an author'])
@@ -79,18 +78,22 @@ class ReadTweetsCommand(sublime_plugin.WindowCommand):
     def onTweetSelected(self, number):
         if number > -1 and len(self.tweets) > 0:
             self.selectedTweet = self.tweets.pop(number)
-            self.currentTweetActions = tweet_actions
+            self.currentTweetActions = None
+            self.currentTweetActions = list(my_tweet_actions)
             if (self.selectedTweet.urls):
                 for url in self.selectedTweet.urls: 
                     self.currentTweetActions.append([[url.expanded_url, 'Open URL in external browser'], None])
+            if (self.selectedTweet.media):
+                for m in self.selectedTweet.media: 
+                        self.currentTweetActions.append([[m.expanded_url, 'Open image in external browser'], None])
             actionPresentation = [strings for strings, function in self.currentTweetActions]
+            
             self.window.show_quick_panel(actionPresentation, self.onTweetActionSelected)
     
     def onTweetActionSelected(self, number):
         if number < 0:
             return
         try:
-            print self.currentTweetActions[number]
             [presentation, function] = self.currentTweetActions[number]
             if function:
                 function(self, self.selectedTweet)
@@ -299,7 +302,7 @@ class TwitterUserRegistration(sublime_plugin.WindowCommand):
         self.settingsController.s['twitter_access_token_secret'] = self.access_token_secret
         self.settingsController.saveSettings()
 
-tweet_actions = [
+my_tweet_actions = [
                     [['Favorite', ''], ReadTweetsCommand.doFavorite], 
                     [['Retweet', ''], ReadTweetsCommand.doRetweet], 
                     [['Reply', ''], ReadTweetsCommand.doReply], 

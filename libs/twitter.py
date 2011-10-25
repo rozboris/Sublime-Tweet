@@ -126,6 +126,7 @@ class Status(object):
                source=None,
                now=None,
                urls=None,
+               media=None,
                user_mentions=None,
                hashtags=None,
                geo=None,
@@ -186,6 +187,7 @@ class Status(object):
     self.retweeted = retweeted
     self.source = source
     self.urls = urls
+    self.media = media
     self.user_mentions = user_mentions
     self.hashtags = hashtags
     self.geo = geo
@@ -609,11 +611,14 @@ class Status(object):
     else:
       retweeted_status = None
     urls = None
+    media = None
     user_mentions = None
     hashtags = None
     if 'entities' in data:
       if 'urls' in data['entities']:
         urls = [Url.NewFromJsonDict(u) for u in data['entities']['urls']]
+      if 'media' in data['entities']:
+        media = [Url.NewFromJsonDict(u) for u in data['entities']['media']]
       if 'user_mentions' in data['entities']:
         user_mentions = [User.NewFromJsonDict(u) for u in data['entities']['user_mentions']]
       if 'hashtags' in data['entities']:
@@ -631,6 +636,7 @@ class Status(object):
                   source=data.get('source', None),
                   user=user,
                   urls=urls,
+                  media=media,
                   user_mentions=user_mentions,
                   hashtags=hashtags,
                   geo=data.get('geo', None),
