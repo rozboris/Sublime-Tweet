@@ -4,21 +4,23 @@
 import sublime, sublime_plugin
 import libs.twitter
 import json
+from libs.get_access_token import TwitterAccessTokenRequester
 import thread
 import time
 
 consumer_key    = '8m6wYJ3w8J7PxaZxTMkzw'
 consumer_secret = 'XnbfrGRC0n93b37PaN7tZa53RuNbExeHRV1gToh4'
 url_that_always_online = 'http://twitter.com'
-timeout = 5
+timeout = 2
 tweetsCount = 50
-tweet_actions = [['Favorite', ''], ['Retweet', ''], ['Reply', ''], ['Show related tweets', '']]
 
 class ReadTweetsCommand(sublime_plugin.WindowCommand):
     def run(self):
         self.internetStatus = None
+        self.settingsController = SublimeTweetSettingsController()
+        self.proxy_config = self.settingsController.s.get('twitter_proxy_config', None)
         sublime.status_message('Checking your internet connection...')
-        thread.start_new_thread(checkInternetConnection, (self.setInternetStatus, timeout))
+        thread.start_new_thread(checkInternetConnection, (self.setInternetStatus, timeout, self.proxy_config))
 
     def setInternetStatus(self, status):
         self.internetStatus = status
@@ -31,7 +33,6 @@ class ReadTweetsCommand(sublime_plugin.WindowCommand):
             return
                 
         sublime.status_message('')      
-        self.settingsController = SublimeTweetSettingsController()
         if (not self.settingsController.s['twitter_have_token']):
             TwitterUserRegistration(self.window).register()
             return
@@ -40,26 +41,27 @@ class ReadTweetsCommand(sublime_plugin.WindowCommand):
                 consumer_secret=consumer_secret, 
                 access_token_key=self.settingsController.s['twitter_access_token_key'], 
                 access_token_secret=self.settingsController.s['twitter_access_token_secret'], 
-                input_encoding='utf8')
+                input_encoding='utf8', 
+                proxy=self.proxy_config)
         try:
             self.tweets = self.api.GetFriendsTimeline(count=tweetsCount, retweets=True, include_entities=True)
         except libs.twitter.TwitterError as error:
-            if ('authenticate' in error.message):
-                self.settingsController.s['twitter_have_token'] = False
-                self.settingsController.saveSettings()
-            sublime.status_message('Sorry, we have some problems. Please, try again.')
-            print 'Problems with tweeting:%s' % error.message
-            return
-
-        previouslyShownTweets = self.settingsController.s.get('previously_shown_tweets', None)
-        self.settingsController.s['previously_shown_tweets'] = [s.id for s in self.tweets]
-        self.settingsController.saveSettings()
-        for t in self.tweets:
-            t.new = False
-            if not previouslyShownTweets or len(previouslyShownTweets) <= 0 or not (t.id in previouslyShownTweets):
-                t.new = True
-                
-        sublime.set_timeout(self.showTweetsOnPanel, 0)
+            handleError(error)
+            self.tweets = None
+        except:
+            print 'We have some connection issues'
+            self.tweets = None
+        
+        if(self.tweets):
+            previouslyShownTweets = self.settingsController.s.get('previously_shown_tweets', None)
+            self.settingsController.s['previously_shown_tweets'] = [s.id for s in self.tweets]
+            self.settingsController.saveSettings()
+            for t in self.tweets:
+                t.new = False
+                if not previouslyShownTweets or len(previouslyShownTweets) <= 0 or not (t.id in previouslyShownTweets):
+                    t.new = True
+                    
+            sublime.set_timeout(self.showTweetsOnPanel, 0)
     
     def showTweetsOnPanel(self):
         self.tweet_texts = []
@@ -75,79 +77,75 @@ class ReadTweetsCommand(sublime_plugin.WindowCommand):
         self.window.show_quick_panel(self.tweet_texts, self.onTweetSelected)
         
     def onTweetSelected(self, number):
-        if number != -1 and len(self.tweets) > 0:
+        if number > -1 and len(self.tweets) > 0:
             self.selectedTweet = self.tweets.pop(number)
-            self.currentTweetActions = []
             self.currentTweetActions = tweet_actions
             if (self.selectedTweet.urls):
                 for url in self.selectedTweet.urls: 
-                    self.currentTweetActions.append([url.expanded_url, 'Open URL in external browser'])
-            self.window.show_quick_panel(self.currentTweetActions, self.onTweetActionSelected)
+                    self.currentTweetActions.append([[url.expanded_url, 'Open URL in external browser'], None])
+            actionPresentation = [strings for strings, function in self.currentTweetActions]
+            self.window.show_quick_panel(actionPresentation, self.onTweetActionSelected)
     
     def onTweetActionSelected(self, number):
-        if number == -1:
+        if number < 0:
             return
-        elif number == 0:
-            self.doFavorite(self.selectedTweet)
-        elif number == 1:
-            self.doRetweet(self.selectedTweet)
-        elif number == 2:
-            self.window.run_command('tweet', {'replyToName':self.selectedTweet.user.screen_name, 'replyToId':self.selectedTweet.id})
-            return
-        elif number == 3:
-            self.showRelatedTweets(self.selectedTweet)
-        else:
-            url = self.currentTweetActions.pop(number).pop(0)
-            import webbrowser
-            webbrowser.open(url)
-    
+        try:
+            print self.currentTweetActions[number]
+            [presentation, function] = self.currentTweetActions[number]
+            if function:
+                function(self, self.selectedTweet)
+            else:
+                url = presentation[0]
+                import webbrowser
+                webbrowser.open(url)
+        except:
+            print 'Unbelievable!'
+   
+    def doReply(self, tweet):
+        self.window.run_command('tweet', {'replyToName':tweet.user.screen_name, 'replyToId':tweet.id})
+
     def doRetweet(self, tweet):
         try:
             self.api.RetweetPost(id=int(tweet.id))
+            sublime.status_message('Tweet was retweeted')
         except libs.twitter.TwitterError as error:
-            if ('authenticate' in error.message):
-                self.settingsController.s['twitter_have_token'] = False
-                self.settingsController.saveSettings()
-            sublime.status_message('Sorry, we have some problems. Please, try again.')
-            print 'Problems with tweeting:%s' % error.message
-            return
-        sublime.status_message('Tweet was retweeted')
+            handleError(error)
 
     def showRelatedTweets(self, tweet):
         try:
             self.tweets = self.api.GetRelatedTweets(parent_id=int(tweet.id))
+            sublime.set_timeout(self.showTweetsOnPanel, 0)
         except libs.twitter.TwitterError as error:
-            if ('authenticate' in error.message):
-                self.settingsController.s['twitter_have_token'] = False
-                self.settingsController.saveSettings()
-            sublime.status_message('Sorry, we have some problems. Please, try again.')
-            print 'Problems with tweeting:%s' % error.message
-            return
-        sublime.set_timeout(self.showTweetsOnPanel, 0)
+            handleError(error)
 
     def doFavorite(self, tweet):
         try:
             self.api.CreateFavorite(status=tweet)
+            sublime.status_message('Tweet was favorited')
         except libs.twitter.TwitterError as error:
-            if ('authenticate' in error.message):
-                self.settingsController.s['twitter_have_token'] = False
-                self.settingsController.saveSettings()
-            sublime.status_message('Sorry, we have some problems. Please, try again.')
-            print 'Problems with tweeting:%s' % error.message
-            return
-        sublime.status_message('Tweet was favorited')        
+            handleError(error)        
+
+    def handleError(self, error):
+        if ('authenticate' in error.message):
+            self.settingsController.s['twitter_have_token'] = False
+            self.settingsController.saveSettings()
+        sublime.status_message('Sorry, we have some problems. Please, try again.')
+        print 'Problems with tweeting:%s' % error.message
 
 class TweetCommand(sublime_plugin.WindowCommand):
     def run(self, replyToName=None, replyToId=None):
-        self.replyToName = replyToName
+        self.maxlength = 140
         self.replyToId = replyToId
         if (replyToId):
-            self.maxlength = 140 - len(replyToName) - 2
+            self.prefix = '@%s ' % replyToName
         else:
-            self.maxlength = 140
+            self.prefix = ''
         self.internetStatus = None
+        self.settingsController = SublimeTweetSettingsController()
+        self.proxy_config = self.settingsController.s.get('twitter_proxy_config', None)
+
         sublime.status_message('Checking your internet connection...')
-        thread.start_new_thread(checkInternetConnection, (self.setInternetStatus, timeout))
+        thread.start_new_thread(checkInternetConnection, (self.setInternetStatus, timeout, self.proxy_config))
 
     def setInternetStatus(self, status):
         self.internetStatus = status
@@ -168,29 +166,29 @@ class TweetCommand(sublime_plugin.WindowCommand):
             return
         
         if(self.replyToId):
-            message = 'Reply to @%s:' % self.replyToName
+            message = 'Reply to %s:' % self.prefix.strip()
         else:
             message = 'Tweet:'
         self.window.show_input_panel(message, '', self.on_entered_tweet, self.update_character_counter_on_entering_tweet, None)
     
     def update_character_counter_on_entering_tweet(self, text):
-        m = 'Charaters remain: %s' % (self.maxlength - len(text))
-        sublime.status_message(m) 
+        m = 'Charaters remain: %d' % (self.maxlength - len(self.prefix + text))
+        sublime.status_message(m)
 
     def on_entered_tweet(self, text):
         if (text != ''):
             sublime.status_message('Sending tweet...')
-            if (self.replyToId):
-                text = '@%s %s' % (self.replyToName, text)
+            text = self.prefix + text
             api = libs.twitter.Api(consumer_key=consumer_key, 
                 consumer_secret=consumer_secret, 
                 access_token_key=self.settingsController.s['twitter_access_token_key'], 
                 access_token_secret=self.settingsController.s['twitter_access_token_secret'], 
-                input_encoding='utf8'
-                )
-            if (len(text) > 140):
-                text = text[:131] + '... cont.'
-                sublime.status_message('Your tweet is longer than 140 symbols, so it was truncated to 140 and posted anyway.')    
+                input_encoding='utf8', 
+                proxy=self.proxy_config)
+            if (len(text) > self.maxlength):
+                after = '... cont.'
+                text = text[:self.maxlength - len(after)] + after 
+                sublime.status_message('Your tweet is longer than {0} symbols, so it was truncated to {0} and posted anyway.'.format(self.maxlength))    
             text = text.encode('utf8')
             try:
                 if self.replyToId:
@@ -202,7 +200,7 @@ class TweetCommand(sublime_plugin.WindowCommand):
                     self.settingsController.s['twitter_have_token'] = False
                     self.settingsController.saveSettings()
                 sublime.status_message('Sorry, we have some problems. Please, try again.')
-                print 'Problems with tweeting:%s' % error.message
+                print 'Problems with tweeting: %s' % error.message
                 return
             sublime.status_message('Your tweet was posted!')
             print 'Tweet was posted!'
@@ -210,38 +208,48 @@ class TweetCommand(sublime_plugin.WindowCommand):
 
 class SublimeTweetSettingsController:
     def __init__(self, filename = 'SublimeTweet.settings'):
-        self.defaultSettings = {'twitter_have_token': False, 'twitter_access_token_key': None, 'twitter_access_token_secret': None, 'previously_shown_tweets':[]}
+        self.defaultSettings = {'twitter_have_token': False, 
+                                'twitter_access_token_key': None, 
+                                'twitter_access_token_secret': None, 
+                                'previously_shown_tweets':[], 
+                                'twitter_proxy_config': None}
         self.filename = sublime.packages_path() + '/User/' + filename
+        #TODO path.join
         self.s = self.loadSettings()
 
-    def loadSettings(self, forceRewriteFile = False):
-        import os.path
-        if(not forceRewriteFile and os.path.exists(self.filename)):
-            #Reading settings from existing file
-            with open(self.filename) as f:
-                try:
-                    r = json.load(f)
-                except:
-                    return self.loadSettings(forceRewriteFile=True)
-                return r
-        else:
-            #Creating new settings file
-            with open(self.filename, 'w') as f:
-               f.write(json.dumps(self.defaultSettings, sort_keys=True, indent=4))
-            return self.defaultSettings
+    def loadSettings(self):
+        try:
+            contents = open(self.filename).read()
+            return json.loads(contents)
+        except:
+            self.s = self.defaultSettings
+            self.saveSettings()
+            return self.s
     
     def saveSettings(self):
-        with open(self.filename, 'w') as f:
-           f.write(json.dumps(self.s, sort_keys=True, indent=4))
+        try:
+            with open(self.filename, 'w') as f:
+                f.write(json.dumps(self.s, sort_keys=True, indent=4))
+        except:
+            print 'Can\'t save settings and can\'t fix it, sorry :('
+            pass # TODO
 
-def checkInternetConnection(func, timeout):
+def checkInternetConnection(callback, timeout, proxy_config):
     try:
         import urllib2
-        response=urllib2.urlopen(url_that_always_online,timeout=timeout)
-        func(True)
-        return
-    except urllib2.URLError as err: pass
-    func(False)
+        if (proxy_config):
+            proxy = urllib2.ProxyHandler(proxy_config)
+            opener = urllib2.build_opener(proxy)
+            urllib2.install_opener(opener)
+        response = urllib2.urlopen(url_that_always_online, timeout=timeout)
+        callback(True)
+    except:
+        callback(False)
+        #try:
+        #    response = urllib2.urlopen(url_that_always_online, timeout=timeout)
+        #    callback(True)
+        #except:
+        #    callback(False)
 
 class TwitterUserRegistration(sublime_plugin.WindowCommand):
     def __init__(self, window):
@@ -249,6 +257,11 @@ class TwitterUserRegistration(sublime_plugin.WindowCommand):
 
     def register(self):
         self.settingsController = SublimeTweetSettingsController()
+        if (self.settingsController.s.get('twitter_proxy_config', None)):
+            print 'Sorry, we can\'t register through proxy now'
+            sublime.status_message('Sorry, we can\'t register through proxy now')
+            return
+
         if (not self.settingsController.s['twitter_have_token']):
             from libs.get_access_token import TwitterAccessTokenRequester
             self.TwitterAccessTokenRequester = TwitterAccessTokenRequester(consumer_key, consumer_secret)
@@ -285,3 +298,10 @@ class TwitterUserRegistration(sublime_plugin.WindowCommand):
         self.settingsController.s['twitter_access_token_key'] = self.access_token_key
         self.settingsController.s['twitter_access_token_secret'] = self.access_token_secret
         self.settingsController.saveSettings()
+
+tweet_actions = [
+                    [['Favorite', ''], ReadTweetsCommand.doFavorite], 
+                    [['Retweet', ''], ReadTweetsCommand.doRetweet], 
+                    [['Reply', ''], ReadTweetsCommand.doReply], 
+                    [['Show related tweets', ''], ReadTweetsCommand.showRelatedTweets]
+                ]

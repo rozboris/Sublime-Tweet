@@ -36,6 +36,7 @@ import urllib2
 import urlparse
 import gzip
 import StringIO
+import socket
 
 try:
   # Python >= 2.6
@@ -2110,6 +2111,29 @@ class Api(object):
                             consumer_secret='twitter consumer secret',
                             access_token_key='the_key_given',
                             access_token_secret='the_key_secret')
+    
+    To use a proxy server, instantiate the twitter.Api class with a
+    dictionary containing proxy servers.
+
+      >>> api = twitter.Api(consumer_key='twitter consumer key',
+                            consumer_secret='twitter consumer secret',
+                            access_token_key='the_key_given',
+                            access_token_secret='the_key_secret',
+                            proxy = { 'http'  : 'proxy_server',
+                                      'https' : 'proxy_server' })
+
+    The value of proxy_server can include credentials and port numbers.
+    For example:
+      http://mike:secret@proxy.company.com:8080
+
+    To specify a socket timeout, pass an optional parameter when 
+    instantiating twitter.Api.
+
+      >>> api = twitter.Api(consumer_key='twitter consumer key',
+                            consumer_secret='twitter consumer secret',
+                            access_token_key='the_key_given',
+                            access_token_secret='the_key_secret',
+                            timeout=10)
 
     To fetch your friends (after being authenticated):
 
@@ -2158,7 +2182,9 @@ class Api(object):
                shortner=None,
                base_url=None,
                use_gzip_compression=False,
-               debugHTTP=False):
+               debugHTTP=False, 
+               proxy={},
+               timeout=0):
     '''Instantiate a new twitter.Api object.
 
     Args:
@@ -2203,6 +2229,9 @@ class Api(object):
     self._InitializeRequestHeaders(request_headers)
     self._InitializeUserAgent()
     self._InitializeDefaultParameters()
+    
+    self._proxy = proxy
+    self._timeout = timeout
 
     if base_url is None:
       self.base_url = 'https://api.twitter.com/1'
@@ -3761,6 +3790,11 @@ class Api(object):
     Returns:
       A string containing the body of the response.
     '''
+    # Set a timeout if needed
+    if self._timeout != 0:
+      socketTimeout = socket.getdefaulttimeout()
+      socket.setdefaulttimeout(self._timeout)
+    
     # Build the extra parameters dict
     extra_params = {}
     if self._default_params:
@@ -3780,10 +3814,14 @@ class Api(object):
 
     http_handler  = self._urllib.HTTPHandler(debuglevel=_debug)
     https_handler = self._urllib.HTTPSHandler(debuglevel=_debug)
+    proxy_handler = self._urllib.ProxyHandler(self._proxy)
 
     opener = self._urllib.OpenerDirector()
     opener.add_handler(http_handler)
     opener.add_handler(https_handler)
+
+    if self._proxy:
+      opener.add_handler(proxy_handler)
 
     if use_gzip_compression is None:
       use_gzip = self._use_gzip
@@ -3842,7 +3880,9 @@ class Api(object):
         opener.close()
       else:
         url_data = self._cache.Get(key)
-
+    # Restore the original socket timeout
+    if self._timeout != 0:
+      socket.setdefaulttimeout(socketTimeout)
     # Always return the latest version
     return url_data
 
