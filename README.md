@@ -12,9 +12,11 @@ It allows you to read and post tweets right from our favorite Sublime Text 2!
 
 * (25 Oct 2011) Added proxy support
 
+* (27 Oct 2011) Added proxy support to authorization
+
 ## Installation ##
 
-### With Package Control (not yet available) ###
+### With Package Control ###
 
 If you have the [Package Control][package_control] installed, you can install Sublime Tweet from inside Sublime Text itself. Open the Command Palette and select "Package Control: Install Package", then search for Sublime Tweet and you’re done!
 
@@ -55,7 +57,7 @@ Note: *You currently can't sign in to Twitter through proxy, you can only use it
 
 Go to your Sublime Text 2 Packages directory, locate `/User/SublimeTweet.settings` file and replace
 
-    "twitter_proxy_config": none
+    "twitter_proxy_config": null
 
 with
 
@@ -65,13 +67,16 @@ with
 	}
 
 
-##First run##
+## First run ##
 
 On the first run of Sublime Tweet you will be prompted to authorize it, don’t be surprised. You should do it only once.
 
----------
+## Donate ##
 
-It’s an early beta now, please submit all bugs found.
+If you like Sublime Tweet you can [donate][donate] to the author (via PayPal).
+
+---------
 
 [sublime]: http://www.sublimetext.com/2
 [package_control]: http://wbond.net/sublime_packages/package_control
+[donate]: https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=TVLQ2XQGFDS6Y&lc=US&item_name=Sublime%20Tweet&item_number=SublimeTweet&currency_code=USD&bn=PP%2dDonationsBF%3abtn_donate_SM%2egif%3aNonHosted
