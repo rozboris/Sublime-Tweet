@@ -54,10 +54,7 @@ import hmac
 from gettext import gettext as _
 import socket
 
-try:
-    from httplib2 import socks
-except ImportError:
-    socks = None
+import socks
 
 # Build the appropriate socket wrapper for ssl
 try:

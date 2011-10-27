@@ -22,10 +22,16 @@ except:
   from cgi import parse_qsl
 
 import oauth2 as oauth
+import httplib2
+import socks
 
 class TwitterAccessTokenRequester:
-  def __init__(self, consumer_key, consumer_secret):
+  def __init__(self, consumer_key, consumer_secret, proxy_host=None, proxy_port=None):
     (self.consumer_key, self.consumer_secret) = (consumer_key, consumer_secret)
+    if proxy_host and proxy_port:
+      self.proxy = httplib2.ProxyInfo(proxy_type=socks.PROXY_TYPE_HTTP, proxy_host=proxy_host, proxy_port=proxy_port) 
+    else:
+      self.proxy = None
 
   def getTokenFirstStep(self):
     self.REQUEST_TOKEN_URL = 'https://api.twitter.com/oauth/request_token'
@@ -34,7 +40,7 @@ class TwitterAccessTokenRequester:
     self.SIGNIN_URL        = 'https://api.twitter.com/oauth/authenticate'
 
     self.oauth_consumer = oauth.Consumer(key=self.consumer_key, secret=self.consumer_secret)
-    self.oauth_client = oauth.Client(self.oauth_consumer)
+    self.oauth_client = oauth.Client(consumer=self.oauth_consumer, proxy_info=self.proxy)
 
     print 'Requesting temp token from Twitter'
 
@@ -53,14 +59,13 @@ class TwitterAccessTokenRequester:
     token.set_verifier(pin)
 
     print 'Generating and signing request for an access token and pin=%s' % pin
-    self.oauth_client  = oauth.Client(self.oauth_consumer, token)
+    self.oauth_client  = oauth.Client(self.oauth_consumer, token=token, proxy_info=self.proxy)
     resp, content = self.oauth_client.request(self.ACCESS_TOKEN_URL, method='POST', body='oauth_verifier=%s' % pin)
     access_token  = dict(parse_qsl(content))
 
     print self.request_token['oauth_token']
     if resp['status'] != '200':
       print 'The request for a Token did not succeed: %s' % resp['status']
-      #print access_token, content, resp
       raise
     else:
       print 'Your Twitter Access Token key: %s' % access_token['oauth_token']

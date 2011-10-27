@@ -260,14 +260,19 @@ class TwitterUserRegistration(sublime_plugin.WindowCommand):
 
     def register(self):
         self.settingsController = SublimeTweetSettingsController()
+        self.proxy_host, self.proxy_port = None, None
         if (self.settingsController.s.get('twitter_proxy_config', None)):
-            print 'Sorry, we can\'t register through proxy now'
-            sublime.status_message('Sorry, we can\'t register through proxy now')
-            return
+            (self.proxy_host, self.proxy_port) = self.settingsController.s['twitter_proxy_config']['http'].split(':')
+            try:
+                (self.proxy_host, self.proxy_port) = (str(self.proxy_host), int(self.proxy_port))
+            except:
+                print 'Can\'t parse your proxy settings, sorry'
+                sublime.status_message('Can\'t parse your proxy settings, sorry')
+                return
 
         if (not self.settingsController.s['twitter_have_token']):
             from libs.get_access_token import TwitterAccessTokenRequester
-            self.TwitterAccessTokenRequester = TwitterAccessTokenRequester(consumer_key, consumer_secret)
+            self.TwitterAccessTokenRequester = TwitterAccessTokenRequester(consumer_key, consumer_secret, self.proxy_host, self.proxy_port)
             try:
                 url = self.TwitterAccessTokenRequester.getTokenFirstStep()
             except:
