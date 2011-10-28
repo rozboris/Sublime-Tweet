@@ -18,19 +18,22 @@ class ReadTweetsCommand(sublime_plugin.WindowCommand):
     def run(self):
         self.internetStatus = None
         self.settingsController = SublimeTweetSettingsController()
-        self.proxy_config = self.settingsController.s.get('twitter_proxy_config', None)
         sublime.status_message('Checking your internet connection...')
-        thread.start_new_thread(checkInternetConnection, (self.setInternetStatus, timeout, self.proxy_config))
+        thread.start_new_thread(checkInternetConnection, (self.setInternetStatus, timeout, self.settingsController))
 
     def setInternetStatus(self, status):
         self.internetStatus = status
-        sublime.set_timeout(self.loadTweetsFromTimeline, 0)
+        sublime.set_timeout(self.prepareTweetsFromTimeline, 0)
 
-    def loadTweetsFromTimeline(self):
+    def prepareTweetsFromTimeline(self):
         if (self.internetStatus == False):
             print 'No internet connection, sorry!'
             sublime.status_message('Please check your internet connection!')
             return
+        if(self.settingsController.s['use_proxy']):
+            self.proxy_config = self.settingsController.s['twitter_proxy_config']
+        else:
+            self.proxy_config = None
                 
         sublime.status_message('')      
         if (not self.settingsController.s['twitter_have_token']):
@@ -43,15 +46,21 @@ class ReadTweetsCommand(sublime_plugin.WindowCommand):
                 access_token_secret=self.settingsController.s['twitter_access_token_secret'], 
                 input_encoding='utf8', 
                 proxy=self.proxy_config)
+        sublime.status_message('Loading tweets from timeline...')
+        thread.start_new_thread(self.loadTweetsFromTimelineInBackground, ())
+    
+    def loadTweetsFromTimelineInBackground(self):
         try:
             self.tweets = self.api.GetFriendsTimeline(count=tweetsCount, retweets=True, include_entities=True)
+            sublime.set_timeout(self.onTweetsFromTimelineLoaded, 0)
         except libs.twitter.TwitterError as error:
             handleError(error)
             self.tweets = None
         except:
             print 'We have some connection issues'
             self.tweets = None
-        
+   
+    def onTweetsFromTimelineLoaded(self):
         if(self.tweets):
             previouslyShownTweets = self.settingsController.s.get('previously_shown_tweets', None)
             self.settingsController.s['previously_shown_tweets'] = [s.id for s in self.tweets]
@@ -62,7 +71,7 @@ class ReadTweetsCommand(sublime_plugin.WindowCommand):
                     t.new = True
                     
             sublime.set_timeout(self.showTweetsOnPanel, 0)
-    
+
     def showTweetsOnPanel(self):
         self.tweet_texts = []
         if self.tweets and len(self.tweets) > 0:
@@ -76,7 +85,7 @@ class ReadTweetsCommand(sublime_plugin.WindowCommand):
         self.window.show_quick_panel(self.tweet_texts, self.onTweetSelected)
         
     def onTweetSelected(self, number):
-        if number > -1 and len(self.tweets) > 0:
+        if number > -1 and self.tweets and len(self.tweets) > 0:
             self.selectedTweet = self.tweets.pop(number)
             self.currentTweetActions = None
             self.currentTweetActions = list(my_tweet_actions)
@@ -145,22 +154,23 @@ class TweetCommand(sublime_plugin.WindowCommand):
             self.prefix = ''
         self.internetStatus = None
         self.settingsController = SublimeTweetSettingsController()
-        self.proxy_config = self.settingsController.s.get('twitter_proxy_config', None)
-
         sublime.status_message('Checking your internet connection...')
-        thread.start_new_thread(checkInternetConnection, (self.setInternetStatus, timeout, self.proxy_config))
+        thread.start_new_thread(checkInternetConnection, (self.setInternetStatus, timeout, self.settingsController))
 
     def setInternetStatus(self, status):
         self.internetStatus = status
         sublime.set_timeout(self.runIfInternetIsUp, 0)
 
     def runIfInternetIsUp(self):
-        assert(self.internetStatus != None)
         if (self.internetStatus == False):
             print 'No internet connection, sorry!'
             sublime.status_message('Please check your internet connection!')
             return
-                
+        if(self.settingsController.s['use_proxy']):
+            self.proxy_config = self.settingsController.s['twitter_proxy_config']
+        else:
+            self.proxy_config = None
+                    
         sublime.status_message('')
      
         self.settingsController = SublimeTweetSettingsController()
@@ -214,7 +224,8 @@ class SublimeTweetSettingsController:
         self.defaultSettings = {'twitter_have_token': False, 
                                 'twitter_access_token_key': None, 
                                 'twitter_access_token_secret': None, 
-                                'previously_shown_tweets':[], 
+                                'previously_shown_tweets':[],
+                                'use_proxy':False, 
                                 'twitter_proxy_config': None}
         self.filename = sublime.packages_path() + '/User/' + filename
         #TODO path.join
@@ -237,22 +248,47 @@ class SublimeTweetSettingsController:
             print 'Can\'t save settings and can\'t fix it, sorry :('
             pass # TODO
 
-def checkInternetConnection(callback, timeout, proxy_config):
-    try:
-        import urllib2
-        if (proxy_config):
-            proxy = urllib2.ProxyHandler(proxy_config)
-            opener = urllib2.build_opener(proxy)
+def checkInternetConnection(callback, timeout, settings):
+    import urllib2
+    if (settings.s.get('use_proxy', None) and settings.s.get('twitter_proxy_config', None)):
+        proxy = urllib2.ProxyHandler(settings.s['twitter_proxy_config'])
+        opener = urllib2.build_opener(proxy)
+        urllib2.install_opener(opener)
+        try:
+            response = urllib2.urlopen(url_that_always_online, timeout=timeout)
+            settings.s['use_proxy'] = True
+            settings.saveSettings()
+            callback(True)
+        except:
+            opener = urllib2.build_opener()
             urllib2.install_opener(opener)
-        response = urllib2.urlopen(url_that_always_online, timeout=timeout)
-        callback(True)
-    except:
-        callback(False)
-        #try:
-        #    response = urllib2.urlopen(url_that_always_online, timeout=timeout)
-        #    callback(True)
-        #except:
-        #    callback(False)
+            try:
+                response = urllib2.urlopen(url_that_always_online, timeout=timeout)
+                settings.s['use_proxy'] = False
+                settings.saveSettings()
+                callback(True)
+            except:
+                callback(False)
+    else:
+        try:
+            response = urllib2.urlopen(url_that_always_online, timeout=timeout)
+            settings.s['use_proxy'] = False
+            settings.saveSettings()
+            callback(True)
+        except:
+            if(settings.s.get('twitter_proxy_config', None)):
+                proxy = urllib2.ProxyHandler(settings.s['twitter_proxy_config'])
+                opener = urllib2.build_opener(proxy)
+                urllib2.install_opener(opener)
+                try:
+                    response = urllib2.urlopen(url_that_always_online, timeout=timeout)
+                    settings.s['use_proxy'] = True
+                    settings.saveSettings()
+                    callback(True)
+                except:
+                    callback(False)    
+            else:
+                callback(False)
 
 class TwitterUserRegistration(sublime_plugin.WindowCommand):
     def __init__(self, window):
@@ -261,10 +297,10 @@ class TwitterUserRegistration(sublime_plugin.WindowCommand):
     def register(self):
         self.settingsController = SublimeTweetSettingsController()
         self.proxy_host, self.proxy_port = None, None
-        if (self.settingsController.s.get('twitter_proxy_config', None)):
+        if (self.settingsController.s['use_proxy']):
             (self.proxy_host, self.proxy_port) = self.settingsController.s['twitter_proxy_config']['http'].split(':')
             try:
-                (self.proxy_host, self.proxy_port) = (str(self.proxy_host), int(self.proxy_port))
+                self.proxy_host, self.proxy_port = str(self.proxy_host), int(self.proxy_port)
             except:
                 print 'Can\'t parse your proxy settings, sorry'
                 sublime.status_message('Can\'t parse your proxy settings, sorry')

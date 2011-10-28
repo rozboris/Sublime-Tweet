@@ -1,18 +1,20 @@
 # Sublime Tweet #
 
-Sublime Tweet is an open source twitter plugin for [Sublime Text 2][sublime] editor. 
+Sublime Tweet is an open source twitter plugin for [Sublime Text 2][sublime] editor. If you like it you can [donate][donate] to the author via PayPal.
 
 It allows you to read and post tweets right from our favorite Sublime Text 2!
 
 ## Updates ##
 
-* (22 Oct 2011) Sublime Tweet now can `favorite`, `retweet`, `reply` and `open URLs` from tweets!
+* (28 Oct 2011) Added proxy availability detection (now if you're using proxy at work you shouldn't turn it off at home, Sublimt Tweet will handle it). Timeline now downloads in background and Sublime Text never freezes.
 
-* (23 Oct 2011) Added `Related tweets` and `Mark new tweets` features
+* (27 Oct 2011) Added proxy support to authorization
 
 * (25 Oct 2011) Added proxy support
 
-* (27 Oct 2011) Added proxy support to authorization
+* (23 Oct 2011) Added `Related tweets` and `Mark new tweets` features
+
+* (22 Oct 2011) Sublime Tweet now can `favorite`, `retweet`, `reply` and `open URLs` from tweets!
 
 ## Installation ##
 
@@ -52,8 +54,6 @@ and clone the repository there
 You’ll see a list of latest tweets in your timeline. Just hit Enter on a tweet to favorite, retweet, reply, get related tweets or open an URL from the tweet.
 
 ## How to set proxy to use ##
-
-Note: *You currently can't sign in to Twitter through proxy, you can only use it, if you were authorised without proxy, sorry*
 
 Go to your Sublime Text 2 Packages directory, locate `/User/SublimeTweet.settings` file and replace
 
