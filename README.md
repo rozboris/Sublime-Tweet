@@ -30,6 +30,8 @@ Go to your Sublime Text 2 Packages directory:
 
 	Mac: ~/Library/Application Support/Sublime Text 2/Packages/	
 
+  Linux: ~/.config/sublime-text-2/Packages
+
 and clone the repository there
 	
 	git clone git://github.com/rozboris/Sublime-Tweet.git "Sublime Tweet"
