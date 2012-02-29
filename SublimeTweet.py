@@ -78,10 +78,11 @@ class ReadTweetsCommand(sublime_plugin.WindowCommand):
         self.tweet_texts = []
         if self.tweets and len(self.tweets) > 0:
             for s in self.tweets:
-                firstLine = '@%s (%s)' % (s.user.screen_name, s.relative_created_at)
-                secondLine = s.text
-                if hasattr(s, 'new') and s.new:
+                firstLine  = s.text
+                secondLine = '@%s (%s)' % (s.user.screen_name, s.relative_created_at)
+                if hasattr(s, 'new') and s.new: 
                     secondLine = '*NEW* ' + secondLine
+
                 self.tweet_texts.append([firstLine, secondLine])
         else:
             self.tweet_texts.append(['No tweets to show', 'If you think it\'s an error - please contact an author'])
@@ -358,6 +359,6 @@ my_tweet_actions = [
     [['Back', ''], ReadTweetsCommand.showTweets],
     [['Favorite', ''], ReadTweetsCommand.doFavorite],
     [['Retweet', ''], ReadTweetsCommand.doRetweet],
-    [['Reply', ''], ReadTweetsCommand.doReply]
-#    [['Show related tweets', ''], ReadTweetsCommand.showRelatedTweets]
+    [['Reply', ''], ReadTweetsCommand.doReply],
+    [['Show related tweets', ''], ReadTweetsCommand.showRelatedTweets]
 ]
