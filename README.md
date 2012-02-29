@@ -6,6 +6,8 @@ It allows you to read and post tweets right from our favorite Sublime Text 2!
 
 ## Updates ##
 
+* (29 Feb 2012) Applied some patches, added `Back` button.
+
 * (28 Oct 2011) Added proxy availability detection (now if you're using proxy at work you shouldn't turn it off at home, Sublimt Tweet will handle it). Timeline now downloads in background and Sublime Text never freezes.
 
 * (27 Oct 2011) Added proxy support to authorization
@@ -30,7 +32,7 @@ Go to your Sublime Text 2 Packages directory:
 
 	Mac: ~/Library/Application Support/Sublime Text 2/Packages/	
 
-  Linux: ~/.config/sublime-text-2/Packages
+	Linux: ~/.config/sublime-text-2/Packages
 
 and clone the repository there
 	
