@@ -8,8 +8,8 @@ import threading
 import os
 import urllib.request as req
 from datetime import datetime
-from Sublime_Tweet.libs.twitter import *
-from Sublime_Tweet.libs.reltime import *
+from .libs.twitter import *
+from .libs.reltime import *
 import webbrowser
 
 consumer_key = '8m6wYJ3w8J7PxaZxTMkzw'
