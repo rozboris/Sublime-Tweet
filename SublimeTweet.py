@@ -38,11 +38,8 @@ class ReadTweetsCommand(sublime_plugin.WindowCommand):
   def prepareTweetsFromTimeline(self):
     sublime.status_message('')
     if (not self.settingsController.s['twitter_have_token']):
-      MY_TWITTER_CREDS = ''
-      oauth_dance("Sublime Tweet", consumer_key, consumer_secret, MY_TWITTER_CREDS)
-      oauth_token, oauth_secret = read_token_file(MY_TWITTER_CREDS)
-      print(oauth_token, oauth_secret)
-      Sublime_Tweet.libs.twitter.TwitterUserRegistration(self.window).register()
+      oauth_dance("Sublime Tweet", consumer_key, consumer_secret)
+      TwitterUserRegistration(self.window).register()
       return
 
     self.api = Twitter(auth=OAuth(
@@ -322,7 +319,7 @@ class TwitterUserRegistration(sublime_plugin.WindowCommand):
 
   def on_entered_pin(self, text):
     try:
-      pin = int(text)
+      pin = str(text)
       keys = oauth_dance_verify(consumer_key, consumer_secret, self.oauth_token, self.oauth_token_secret, pin)
     except ValueError:
       print('We have some problems with pin. Please, try again.')
